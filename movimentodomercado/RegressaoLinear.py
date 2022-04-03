@@ -81,3 +81,30 @@ plt.xticks(rotation=90, size=8)
 plt.tight_layout()
 plt.show()
 plt.clf()
+
+plt.scatter(df['dias_no_futuro_retorno'], df['rsi9'])
+plt.show()
+plt.clf()
+
+linearFeatures = sm.add_constant(features)
+tamanhoTreinamento = int(0.85 * features.shape[0])
+variaveisTreinamento = linearFeatures[:tamanhoTreinamento]
+alvoTreineamento = target[:tamanhoTreinamento]
+variaveisTeste = linearFeatures[tamanhoTreinamento:]
+alvoTeste = target[tamanhoTreinamento:]
+
+modelo = sm.OLS(alvoTreineamento, variaveisTreinamento)
+resultado = modelo.fit()
+
+print(resultado.pvalues)
+
+previsoesTreinamento = resultado.predict(variaveisTreinamento)
+previsoesTeste = resultado.predict(variaveisTeste)
+
+plt.scatter(previsoesTreinamento, alvoTreineamento, alpha = 0.2, color = 'b', label = 'treinamento')
+plt.scatter(previsoesTeste, alvoTeste, alpha = 0.2, color = 'r', label = 'teste')
+
+plt.xlabel('previsoes')
+plt.ylabel('reais')
+plt.legend()
+plt.show()
