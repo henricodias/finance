@@ -2,6 +2,8 @@ import time
 import random
 import MetaTrader5 as mt5
 import pandas as pd
+import numpy as np
+import talib
 
 #configura parâmetros da biblioteca pandas
 pd.set_option('display.max_columns', 500)
@@ -106,4 +108,51 @@ df = pd.DataFrame(df)
 df['time'] = pd.to_datetime(df['time'], unit='s')
 df = df.set_index('time') #tempo em index
 
-print(df)
+#criação das médias
+df['ema9'] = talib.EMA(df['close'].values, timeperiod=9)
+df['ema21'] = talib.EMA(df['close'].values, timeperiod=21)
+
+while True:
+    totalOrdens = mt5.positions_total()
+    dr = pd.DataFrame()
+    dr = mt5.copy_rates_from_pos(ativo, mt5.TIMEFRAME_M1, 0, 1)
+    dr = pd.DataFrame(dr)
+    dr['time'] = pd.to_datetime(dr['time'], unit='s')
+    dr = dr.set_index('time')  # tempo em index
+    dr = dr.append(dr)
+    df['ema9'] = talib.EMA(df['close'].values, timeperiod=9)
+    df['ema21'] = talib.EMA(df['close'].values, timeperiod=21)
+    df['signal'] = np.sign(df['ema9'] - df['ema21'])
+    print(df)
+
+
+    if(totalOrdens == 0):
+        if(df['signal'].iloc[-1] == 1):
+            print(compra())
+            totalOrdens = mt5.positions_total()
+        else:
+            print(venda())
+            totalOrdens = mt5.positions_total()
+    elif(totalOrdens == 1):
+        infoPosicoes = mt5.positions_get(symbol=ativo)
+        dataPosicoes = pd.DataFrame(list(infoPosicoes), columns=infoPosicoes[0]._asdict().keys())
+
+        if(dataPosicoes['type'][0] == 0 and df['signal'].iloc[-1] == -1):
+            print(ordem_fechamento((str(dataPosicoes['symbol'][0]),
+                                    float(dataPosicoes['volume'][0]),
+                                    int(dataPosicoes['ticket'][0]),
+                                    dataPosicoes['type'][0]),
+                                   int(dataPosicoes['magic'][0]),
+                                   0))
+            print(venda())
+
+        if (dataPosicoes['type'][0] == 1 and df['signal'].iloc[-1] == 1):
+            print(ordem_fechamento((str(dataPosicoes['symbol'][0]),
+                                    float(dataPosicoes['volume'][0]),
+                                    int(dataPosicoes['ticket'][0]),
+                                    dataPosicoes['type'][0]),
+                                   int(dataPosicoes['magic'][0]),
+                                   0))
+            print(compra())
+
+    time.sleep(60)
