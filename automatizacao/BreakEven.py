@@ -37,3 +37,39 @@ def VerificaHorarioOperacoes():
         return True
     else:
         return False
+
+#define a ordem de fechamento
+def ordem_fechamento(ativo, quantidade, ticket, type_order, magic, deviation):
+    if(type_order == 0):
+        print("ORDEM DE VENDA - FECHAMENTO")
+        request_fechamento = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "position": ticket,
+            "symbol": ativo,
+            "volume": quantidade,
+            "deviation": deviation,
+            "magic": magic,
+            "type": mt5.ORDER_TYPE_SELL,
+            "price": mt5.symbol_info_tick(ativo).ask,
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_RETURN
+        }
+
+        resultado = mt5.order_send(request_fechamento)
+        print(resultado)
+    else:
+        print("ORDEM DE COMPRA - FECHAMENTO")
+        request_fechamento = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "position": ticket,
+            "symbol": ativo,
+            "volume": quantidade,
+            "deviation": deviation,
+            "magic": magic,
+            "type": mt5.ORDER_TYPE_BUY,
+            "price": mt5.symbol_info_tick(ativo).bid,
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_RETURN
+        }
+        resultado = mt5.order_send(request_fechamento)
+        print(resultado)
