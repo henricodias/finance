@@ -134,3 +134,44 @@ def ColetaValorDisponivel():
 
     return balance
 
+while True:
+    if VerificaHorarioOperacoes() and ColetaValorDisponivel() > 400:
+        totalOrdens = mt5.positions_total()
+        df = pd.DataFrame()
+        df = mt5.copy_rates_from_pos(ativo, mt5.TIMEFRAME_M1, 1, 50) #verificar
+        df = pd.DataFrame(df)
+        df['time'] = pd.to_datetime(df['time'], units='s')
+        df = df.set_index('time')
+
+        #Data Frame auxiliar:
+        df = pd.DataFrame()
+        df = mt5.copy_rates_from_pos(ativo, mt5.TIMEFRAME_M1, 0, 1)
+        dr = pd.DataFrame(dr)
+        dr['time'] = pd.to_datetime(dr['time'], unit='s')
+        dr = dr.set_index('time')
+        df = df.append(dr)
+
+        #Bandas de Bollinger
+        df['banda_alta'] = getBandas(df, 20, qtdDesvios)['upper']
+        df['banda_baixa'] = getBandas(df, 20, qtdDesvios)['lower']
+        df['media'] = getBandas(df, 20, qtdDesvios)['middle']
+        df['diff_upper_low'] = df['banda_alta'] - df['banda_baixa']
+
+        df['kama'] - talib.KAMA(df['close'].values, timeperiod=9)
+
+        #Imprime o que está acontecendo:
+        print('\n' + '=' * 50)
+        print('NOVO SINAL | {}'.format(datetime.now()))
+        print('=' * 50)
+        print(df.iloc[-1].tail())
+
+        precoAtual = df['close'].iloc[-1]
+        valorIndicador = 'valordoindicadoraqui'
+        bandaInferior = df['banda_baixa'].iloc[-1]
+        bandaSuperior = df['banda_alta'].iloc[-1]
+        diferencaBandas = df['diff_upper_low'].iloc[-1]
+
+        valorKama = df['kama'].iloc[-1]
+        valorMedia = df['media'].iloc[-1]
+
+
