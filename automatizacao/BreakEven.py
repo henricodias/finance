@@ -75,7 +75,7 @@ def ordem_fechamento(ativo, quantidade, ticket, type_order, magic, deviation):
         print(resultado)
 
 #define a ordem de venda:
-def venda():
+def venda(quantidade):
     print("ORDEM DE VENDA ENVIADA")
     lot = float(1)
     symbol = ativo
@@ -100,7 +100,7 @@ def venda():
     return resultado
 
 #define a ordem de compra:
-def compra():
+def compra(quantidade):
     print("ORDEM DE COMPRA ENVIADA")
     lot = float(1)
     symbol = ativo
@@ -124,4 +124,13 @@ def compra():
     resultado = mt5.order_send(request)
     return resultado
 
+#coleta o valor disponível para operar:
+def ColetaValorDisponivel():
+    #print('retorna a margem')
+    accountInfo = mt5.account_info()
+    accountInfoDict = mt5.account_info()._asdict()
+    df = pd.DataFrame(list(accountInfoDict.items()), columns=['property', 'value'])
+    balance = df['value'][10]
+
+    return balance
 
