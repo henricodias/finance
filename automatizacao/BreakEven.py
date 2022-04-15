@@ -73,3 +73,29 @@ def ordem_fechamento(ativo, quantidade, ticket, type_order, magic, deviation):
         }
         resultado = mt5.order_send(request_fechamento)
         print(resultado)
+
+#define a ordem de venda:
+def venda():
+    print("ORDEM DE VENDA ENVIADA")
+    lot = float(1)
+    symbol = ativo
+    point = mt5.symbol_info(symbol).point
+    price = mt5.symbol_info_tick(symbol).last
+    deviation = 5
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": lot,
+        "type": mt5.ORDER_TYPE_SELL,
+        "price": price,
+        "sl": price + stopLoss * point,
+        "tp": price - takeProfit * point,
+        "deviation": deviation,
+        "magic": 10032021,
+        "comment": "Ordem de Venda Enviada",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_RETURN
+    }
+    resultado = mt5.order_send(request)
+    return resultado
+
