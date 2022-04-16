@@ -135,7 +135,7 @@ def ColetaValorDisponivel():
     return balance
 
 while True:
-    if VerificaHorarioOperacoes() and ColetaValorDisponivel() > 400:
+    if (VerificaHorarioOperacoes() and ColetaValorDisponivel() > 400):
         totalOrdens = mt5.positions_total()
         df = pd.DataFrame()
         df = mt5.copy_rates_from_pos(ativo, mt5.TIMEFRAME_M1, 1, 50) #verificar
@@ -151,7 +151,7 @@ while True:
         dr = dr.set_index('time')
         df = df.append(dr)
 
-        #Bandas de Bollinger
+        #bandas de bollinger
         df['banda_alta'] = getBandas(df, 20, qtdDesvios)['upper']
         df['banda_baixa'] = getBandas(df, 20, qtdDesvios)['lower']
         df['media'] = getBandas(df, 20, qtdDesvios)['middle']
@@ -159,19 +159,77 @@ while True:
 
         df['kama'] - talib.KAMA(df['close'].values, timeperiod=9)
 
-        #Imprime o que está acontecendo:
+        #imprime o que está acontecendo:
         print('\n' + '=' * 50)
         print('NOVO SINAL | {}'.format(datetime.now()))
         print('=' * 50)
         print(df.iloc[-1].tail())
 
         precoAtual = df['close'].iloc[-1]
-        valorIndicador = 'valordoindicadoraqui'
-        bandaInferior = df['banda_baixa'].iloc[-1]
-        bandaSuperior = df['banda_alta'].iloc[-1]
-        diferencaBandas = df['diff_upper_low'].iloc[-1]
+        valorIndicador = df['kama'].iloc[-1]
+        difMediaPrecoAtual = np.abs(valorIndicador - precoAtual)
+        # bandaInferior = df['banda_baixa'].iloc[-1]
+        # bandaSuperior = df['banda_alta'].iloc[-1]
+        # diferencaBandas = df['diff_upper_low'].iloc[-1]
 
-        valorKama = df['kama'].iloc[-1]
-        valorMedia = df['media'].iloc[-1]
+        breakEven = False
+        breakEvenPontos = 50
 
+        #abertura de posição
+        if (totalOrdens == 0):
+            breakEven = False
+            if (precoAtual >= valorIndicador and difMediaPrecoAtual <= 50):
+                print(compra(qtdContratos))
+            elif (precoAtual <= valorIndicador and difMediaPrecoAtual <= 50):
+                print(venda(qtdContratos))
+        elif (totalOrdens == 1):
+            infoPosicoes = mt5.positions_get(symbol=ativo)
+            dataPosicoes = pd.Dataframe(list(infoPosicoes), columns=infoPosicoes[0]._asdict().keys())
 
+            #diferença do preço de operação para o preço atual
+            difAtualOperacao = np.abs(dataPosicoes['price_open'][0] - precoAtual)
+            precoOperacao = dataPosicoes['price_open'][0]
+
+            if (difAtualOperacao >= 100):
+                breakEven = True
+
+            if (breakEven):
+                if (dataPosicoes['type'][0] == 0 and (precoAtual <= precoOperacao + breakEvenPontos or precoAtual <= valorIndicador)):
+                    print(ordem_fechamento(str(dataPosicoes['symbol'][0]),
+                                           float(dataPosicoes['volume'][0]),
+                                           int(dataPosicoes['ticket'][0]),
+                                           dataPosicoes['type'][0],
+                                           int(dataPosicoes['magic'][0]),
+                                           0))
+                    totalOrdens = 0
+                    breakEven = False
+                if(dataPosicoes['type'][0] == 1 and (precoAtual >= precoOperacao - breakEvenPontos or precoAtual >= valorIndicador)):
+                    print(ordem_fechamento(str(dataPosicoes['symbol'][0]),
+                                           float(dataPosicoes['volume'][0]),
+                                           int(dataPosicoes['ticket'][0]),
+                                           dataPosicoes['type'][0],
+                                           int(dataPosicoes['magic'][0]),
+                                           0))
+                    totalOrdens = 0
+                    breakEven = False
+            else:
+                if (dataPosicoes['type'][0] == 0 and (precoAtual <= valorIndicador and valorIndicador >= precoOperacao)):
+                    print(ordem_fechamento(str(dataPosicoes['symbol'][0]),
+                                           float(dataPosicoes['volume'][0]),
+                                           int(dataPosicoes['ticket'][0]),
+                                           dataPosicoes['type'][0],
+                                           int(dataPosicoes['magic'][0]),
+                                           0))
+                    totalOrdens = 0
+                if (dataPosicoes['type'][0] == 1 and (precoAtual >= valorIndicador and valorIndicador <= precoOperacao)):
+                    print(ordem_fechamento(str(dataPosicoes['symbol'][0]),
+                                           float(dataPosicoes['volume'][0]),
+                                           int(dataPosicoes['ticket'][0]),
+                                           dataPosicoes['type'][0],
+                                           int(dataPosicoes['magic'][0]),
+                                           0))
+                    totalOrdens = 0
+        else:
+            print("NOTHING")
+        time.sleep(1)
+    mt5.shutdown()
